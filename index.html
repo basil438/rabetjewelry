@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Products | Rabet Jewelry</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <aside class="sidebar">
+        <div class="brand">RABET JEWELRY</div>
+        <nav class="nav-links">
+            <a href="index.html" class="active">Product Catalog</a>
+            <a href="orders.html">Orders & Activity</a>
+            <a href="profile.html">Order Tracking</a>
+            <a href="about.html">Customer Profile</a>
+            <a href="admin.html" class="admin-link">Admin Dashboard</a>
+        </nav>
+        <div class="user-badge" id="sidebar-user">Loading account...</div>
+    </aside>
+
+    <div class="storefront-page">
+        <header class="store-topbar">
+            <a href="index.html" class="store-brand-link">
+                <img src="logo.jpeg" alt="Rabet Jewelry" class="store-logo-img" onerror="this.style.display='none';">
+                <span class="store-brand-mini">RABET</span>
+            </a>
+
+            <button type="button" id="open-cart-btn" class="cart-pill-btn">
+                <span>⤷🛒ˎˊ˗</span>
+                <span>(CART <span id="header-cart-count">0</span>)</span>
+            </button>
+        </header>
+
+        <section class="store-hero">
+            <div class="store-hero-title-row">
+                <span class="hero-icon" aria-hidden="true">📿</span>
+                <h1 class="store-hero-title">RABET JEWELRY</h1>
+                <span class="hero-icon" aria-hidden="true">💍</span>
+            </div>
+            <p class="store-hero-subtitle">DISCOVER THE PERFECT BLEND OF STYLE AND AFFORDABILITY</p>
+
+            <div class="collection-pills" role="group" aria-label="Collection filters">
+                <button type="button" class="pill-btn active" data-collection="All">All Collection</button>
+                <button type="button" class="pill-btn" data-collection="Women">Women</button>
+                <button type="button" class="pill-btn" data-collection="Men">Men</button>
+            </div>
+
+            <div class="search-wrap">
+                <input type="search" id="search-input" class="store-search-input" placeholder="Search necklaces, watches, bracelets...">
+            </div>
+
+            <div class="category-pills" role="group" aria-label="Category filter">
+                <button type="button" class="cat-pill active" data-category="ALL">ALL</button>
+                <button type="button" class="cat-pill" data-category="NECKLACES">NECKLACES</button>
+                <button type="button" class="cat-pill" data-category="WATCHES">WATCHES</button>
+                <button type="button" class="cat-pill" data-category="HANDBAGS">HANDBAGS</button>
+                <button type="button" class="cat-pill" data-category="TOTEBAGS">TOTEBAGS</button>
+                <button type="button" class="cat-pill" data-category="CHESTBAGS">CHESTBAGS</button>
+                <button type="button" class="cat-pill" data-category="FANNYPACKS">FANNYPACKS</button>
+                <button type="button" class="cat-pill" data-category="SIDEBAGS">SIDEBAGS</button>
+            </div>
+        </section>
+
+        <div id="alert-box"></div>
+
+        <section id="featured-slideshow" class="card" style="margin-bottom:28px; position:relative; border-radius:16px ;overflow:hidden; border:1px solid rgba(229, 190, 73, 0.25);">
+            <div style="position: absolute; top:16px; right:16px; z-index:4; display: flex; gap:8px;">
+                <button type="button" id="slide-prev-btn" class="pill-btn" aria-label="Previous slide">&#8592;</button>
+                <button type="button" id="slide-next-btn" class="pill-btn" aria-label="Next slide">&#8594;</button>
+            </div>
+
+            <div id="slideshow-stage" style=" width:100%; height:520px; position:relative;">
+                <div style="height:100%; display:flex; align-items: center; justify-content:center; color:#94a3b8; font-size:0.95rem;">
+                    Loading pieces...
+                </div>
+            </div>
+
+            <div id="slideshow-dots" style="position:absolute; bottom:16px; right:20px; z-index:4; display:flex; justify-content:center; gap:8px;"></div>
+        </section>
+
+        <main class="store-main">
+            <button type="button" id="sidebar-toggle" class="menu-toggle">≡ Menu</button>
+            <div id="product-grid" class="catalog-grid">Loading...</div>
+
+            <aside id="cart-section" class="cart-drawer is-hidden" aria-label="Shopping Cart">
+                <div class="cart-drawer-header">
+                    <h2>Your Cart (<span id="cart-count">0</span>)</h2>
+                    <button type="button" id="close-cart-btn" class="cart-close-btn">✘</button>
+                </div>
+                <div id="cart-items"></div>
+                <p class="cart-total-row">Total: ksh.<span id="cart-total">0</span></p>
+
+                <div class="checkout-fields">
+                    <input type="text" id="customer-name" placeholder="Your Full Name" required>
+                    <input type="tel" id="customer-phone" placeholder="WhatsApp Number (e.g. 25412345678)" required>
+                    <input type="text" id="customer-address" placeholder="Delivery Location / Notes">
+                    <button type="button" id="checkout-btn" class="checkout-submit-btn">Place Order</button>
+                </div>
+
+                <div id="whatsapp-order-box"></div>
+            </aside>
+        </main>
+    </div>
+
+    <script type="module">
+    import { auth, db, logStoreActivity, seedDefaultProductsIfEmpty } from "./js/firebase-config.js";
+    import {
+        collection,
+        getDocs,
+        addDoc,
+        serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const STORE_WHATSAPP = "254119871223";
+    let allProducts = [];
+    let cart = [];
+    let selectedCollection = "ALL";
+    let selectedCategory = "ALL";
+
+    const catalogGrid = document.getElementById("product-grid");
+    const alertBox = document.getElementById("alert-box");
+    const cartItemsEl = document.getElementById("cart-items");
+    const cartDrawerEl = document.getElementById("cart-section");
+    const whatsappOrderBox = document.getElementById("whatsapp-order-box");
+
+    // 1. Sidebar menu toggle
+    const sidebarToggle = document.getElementById("sidebar-toggle");
+    const sidebarEl = document.querySelector(".sidebar");
+    const storefrontEl = document.querySelector(".storefront-page");
+
+    if (sidebarToggle && sidebarEl) {
+        sidebarToggle.addEventListener("click", () => {
+            sidebarEl.classList.toggle("closed");
+            if (storefrontEl) {
+                storefrontEl.classList.toggle("expanded");
+            }
+        });
+    }
+
+    // 2. Helpers
+    function normalizePhone(phone) {
+        return String(phone || "").replace(/\D/g, "");
+    }
+
+    function generateTrackingRef() {
+        return "TRK-" + Math.random().toString(36).substring(2, 8).toUpperCase();
+    }
+
+    function showAlert(message, type = "success") {
+        if (!alertBox) return;
+        const borderColor = type === "error" ? "#ef4444" : "#10b981";
+        alertBox.innerHTML = `
+            <div class="card" style="border-color:${borderColor}; margin-bottom:16px;">
+                ${message}
+            </div>
+        `;
+    }
+
+    function addItemToCart(productId) {
+        if (!productId) return;
+        const found = allProducts.find((p) => p.id === productId);
+        if (!found) return;
+
+        const maxStock = Number(found.item.stock ?? 0);
+        if (maxStock <= 0) {
+            alert("This item is currently out of stock.");
+            return;
+        }
+
+        const existing = cart.find((c) => c.id === productId);
+        if (existing) {
+            if (existing.qty >= maxStock) {
+                alert(`Only ${maxStock} left in stock.`);
+                return;
+            }
+            existing.qty += 1;
+        } else {
+            cart.push({
+                id: productId,
+                code: found.item.code || productId.slice(0, 6).toUpperCase(),
+                name: found.item.name || "Untitled Item",
+                price: Number(found.item.price || 0),
+                stock: maxStock,
+                qty: 1
+            });
+        }
+
+        updateCart();
+        cartDrawerEl?.classList.remove("is-hidden");
+    }
+
+    // 3. Load products from Firestore into allProducts
+    async function loadProducts() {
+        if (!catalogGrid) return;
+        catalogGrid.innerHTML = `<p style="grid-column: 1 / -1; color: #94a3b8;">Loading catalog...</p>`;
+
+        try {
+            await seedDefaultProductsIfEmpty();
+            const snap = await getDocs(collection(db, "products"));
+            allProducts = [];
+            snap.forEach((docSnap) => {
+                allProducts.push({ id: docSnap.id, item: docSnap.data() });
+            });
+            renderCatalog();
+            renderSlideshow();
+            startSlideshowAutoplay();
+        } catch (err) {
+            console.error("Failed to load products:", err);
+            catalogGrid.innerHTML = `<p style="grid-column: 1 / -1; color: #ef4444;">Unable to load catalog right now.</p>`;
+            renderSlideshow();
+        }
+    }
+
+    // 4. Render filtered catalog cards
+    function renderCatalog() {
+        if (!catalogGrid) return;
+        const query = (document.getElementById("search-input")?.value || "").trim().toLowerCase();
+        catalogGrid.innerHTML = "";
+
+        const matches = allProducts.filter(({ item }) => {
+            const col = (item.collection || item.gender || "ALL").toLowerCase();
+            const cat = (item.category || "").toLowerCase();
+
+            const matchesCol = selectedCollection === "ALL" || col === selectedCollection.toLowerCase();
+            const matchesCat = selectedCategory === "ALL" || cat === selectedCategory.toLowerCase();
+            const matchesSearch =
+                !query ||
+                (item.name || "").toLowerCase().includes(query) ||
+                (item.code || "").toLowerCase().includes(query) ||
+                (item.category || "").toLowerCase().includes(query) ||
+                (item.description || "").toLowerCase().includes(query);
+
+            return matchesCol && matchesCat && matchesSearch;
+        });
+
+        if (!matches.length) {
+            catalogGrid.innerHTML = `<p style="grid-column: 1 / -1; color: #94a3b8;">No matching items found.</p>`;
+            return;
+        }
+
+        matches.forEach(({ id, item }) => {
+            const stockCount = Number(item.stock ?? 0);
+            const outOfStock = stockCount <= 0;
+            const card = document.createElement("article");
+            card.className = "catalog-card";
+
+            card.innerHTML = `
+                ${item.image ? `<img src="${item.image}" alt="${item.name || "Jewelry item"}" class="catalog-card-img">` : ""}
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                    <span class="catalog-ref">REF: ${item.code || id.slice(0, 6).toUpperCase()}</span>
+                    <span style="font-size:0.8rem; color:${outOfStock ? "#ef4444" : "#94a3b8"};">
+                        ${outOfStock ? "Out of Stock" : `In Stock: ${stockCount}`}
+                    </span>
+                </div>
+                <div class="catalog-cat">${item.category || "Jewelry"}</div>
+                <h3 class="catalog-name">${item.name || "Untitled Item"}</h3>
+                <div class="catalog-price">KES ${Number(item.price || 0).toLocaleString()}</div>
+                <p class="catalog-desc">${item.description || ""}</p>
+                <button
+                    type="button"
+                    class="checkout-submit-btn add-cart-btn"
+                    data-id="${id}"
+                    style="margin-top:auto;"
+                    ${outOfStock ? "disabled" : ""}
+                >
+                    ${outOfStock ? "Out of Stock" : "Add to Cart"}
+                </button>
+            `;
+
+            catalogGrid.appendChild(card);
+        });
+    }
+
+    // 5. Update cart UI
+    function updateCart() {
+        const totalQty = cart.reduce((sum, entry) => sum + entry.qty, 0);
+        const totalAmount = cart.reduce((sum, entry) => sum + Number(entry.price) * entry.qty, 0);
+
+        const headerCount = document.getElementById("header-cart-count");
+        const drawerCount = document.getElementById("cart-count");
+        const drawerTotal = document.getElementById("cart-total");
+
+        if (headerCount) headerCount.textContent = totalQty;
+        if (drawerCount) drawerCount.textContent = totalQty;
+        if (drawerTotal) drawerTotal.textContent = totalAmount.toLocaleString();
+
+        if (!cartItemsEl) return;
+
+        if (!cart.length) {
+            cartItemsEl.innerHTML = `<p style="color:#94a3b8; font-size:0.85rem;">Your cart is empty.</p>`;
+            return;
+        }
+
+        cartItemsEl.innerHTML = cart
+            .map(
+                (entry, idx) => `
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid #262c3a;">
+                    <div>
+                        <div style="font-size:0.85rem; font-weight:600;">${entry.name}</div>
+                        <div style="font-size:0.75rem; color:#e5be49;">
+                            KES ${(Number(entry.price) * entry.qty).toLocaleString()} (${entry.qty}x)
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:6px;">
+                        <button type="button" class="qty-dec" data-idx="${idx}">-</button>
+                        <button type="button" class="qty-inc" data-idx="${idx}">+</button>
+                        <button type="button" class="qty-rem" data-idx="${idx}">x</button>
+                    </div>
+                </div>
+            `
+            )
+            .join("");
+    }
+
+    // 6. Collection, category & search filters
+    document.querySelectorAll(".pill-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+            document.querySelectorAll(".pill-btn").forEach((b) => b.classList.remove("active"));
+            btn.classList.add("active");
+            selectedCollection = btn.dataset.collection || "ALL";
+            renderCatalog();
+        });
+    });
+
+    document.querySelectorAll(".cat-pill").forEach((btn) => {
+        btn.addEventListener("click", () => {
+            document.querySelectorAll(".cat-pill").forEach((b) => b.classList.remove("active"));
+            btn.classList.add("active");
+            selectedCategory = btn.dataset.category || "ALL";
+            renderCatalog();
+        });
+    });
+
+    document.getElementById("search-input")?.addEventListener("input", renderCatalog);
+
+    // 7. Open / close cart drawer
+    document.getElementById("open-cart-btn")?.addEventListener("click", () => {
+        cartDrawerEl?.classList.toggle("is-hidden");
+    });
+
+    document.getElementById("close-cart-btn")?.addEventListener("click", () => {
+        cartDrawerEl?.classList.add("is-hidden");
+    });
+
+    // 8. Add product to cart
+    catalogGrid?.addEventListener("click", (e) => {
+        const btn = e.target.closest(".add-cart-btn");
+        if (!btn) return;
+        addItemToCart(btn.dataset.id);
+    });
+
+    // 9. Adjust quantity or remove item in cart
+    cartItemsEl?.addEventListener("click", (e) => {
+        const idx = Number(e.target.dataset.idx);
+        if (Number.isNaN(idx) || !cart[idx]) return;
+
+        if (e.target.classList.contains("qty-inc")) {
+            if (cart[idx].qty < cart[idx].stock) {
+                cart[idx].qty += 1;
+            } else {
+                alert(`Maximum stock (${cart[idx].stock}) reached.`);
+            }
+        } else if (e.target.classList.contains("qty-dec")) {
+            if (cart[idx].qty > 1) {
+                cart[idx].qty -= 1;
+            } else {
+                cart.splice(idx, 1);
+            }
+        } else if (e.target.classList.contains("qty-rem")) {
+            cart.splice(idx, 1);
+        }
+
+        updateCart();
+    });
+
+    // 10. Checkout -> Save order to Firestore + open WhatsApp
+    document.getElementById("checkout-btn")?.addEventListener("click", async () => {
+        if (!cart.length) {
+            alert("Your cart is empty.");
+            return;
+        }
+
+        const customerName = (document.getElementById("customer-name")?.value || "").trim();
+        const customerPhone = normalizePhone(document.getElementById("customer-phone")?.value || "");
+        const customerAddress = (document.getElementById("customer-address")?.value || "").trim();
+
+        if (!customerName || !customerPhone) {
+            alert("Please enter your full name and WhatsApp phone number.");
+            return;
+        }
+
+        const trackingRef = generateTrackingRef();
+        const totalAmount = cart.reduce((sum, entry) => sum + entry.price * entry.qty, 0);
+
+        try {
+            await addDoc(collection(db, "orders"), {
+                trackingCode: trackingRef,
+                customerName,
+                customerPhone,
+                customerAddress: customerAddress || "Not specified",
+                items: cart.map(({ id, code, name, price, qty }) => ({ id, code, name, price, qty })),
+                totalAmount,
+                status: "Pending",
+                userId: auth.currentUser ? auth.currentUser.uid : null,
+                createdAt: serverTimestamp()
+            });
+
+            if (typeof logStoreActivity === "function") {
+                await logStoreActivity("ORDER_CREATED", `New order ${trackingRef} by ${customerName}`);
+            }
+        } catch (err) {
+            console.error("Error saving order:", err);
+        }
+
+        const lines = cart
+            .map((entry, idx) => `${idx + 1}. ${entry.name} (${entry.code}) x${entry.qty} - KES ${(entry.price * entry.qty).toLocaleString()}`)
+            .join("\n");
+
+        const message = [
+            "*NEW ORDER - RABET JEWELRY*",
+            `*Ref:* ${trackingRef}`,
+            "",
+            "*Items:*",
+            lines,
+            "",
+            `*Total:* KES ${totalAmount.toLocaleString()}`,
+            `*Customer:* ${customerName}`,
+            `*Phone:* ${customerPhone}`,
+            `*Delivery / Notes:* ${customerAddress || "N/A"}`
+        ].join("\n");
+
+        const waUrl = `https://wa.me/${STORE_WHATSAPP}?text=${encodeURIComponent(message)}`;
+
+        if (whatsappOrderBox) {
+            whatsappOrderBox.innerHTML = `
+                <div style="margin-top:12px; padding:12px; border:1px solid #10b981; border-radius:8px; background:#0f172a;">
+                    <div style="font-size:0.85rem; color:#10b981; font-weight:600; margin-bottom:8px;">
+                        Order Confirmed (${trackingRef})
+                    </div>
+                    <a href="${waUrl}" target="_blank" rel="noopener noreferrer"
+                        style="display:block; text-align:center; background:#25D366; color:#0c0e13; font-weight:700; padding:10px; border-radius:8px; text-decoration:none;">
+                        Send Order on WhatsApp
+                    </a>
+                </div>
+            `;
+        }
+
+        showAlert(
+            `Order confirmed for <strong>${trackingRef}</strong>! <a href="track.html" style="color:#d4af37; margin-left:10px;">Track Order</a>`,
+            "success"
+        );
+
+        window.open(waUrl, "_blank", "noopener,noreferrer");
+        cart = [];
+        updateCart();
+    });
+
+    // 11. Featured Product Slideshow
+    const slideshowStage = document.getElementById("slideshow-stage");
+    const slideshowDots = document.getElementById("slideshow-dots");
+    let slideIndex = 0;
+    let slideTimer = null;
+
+    function getFeaturedSlides() {
+        if (!Array.isArray(allProducts) || !allProducts.length) return [];
+        const inStock = allProducts.filter(({ item }) => Number(item?.stock ?? 0) > 0);
+        const source = inStock.length ? inStock : allProducts;
+        return source.slice(0, 5);
+    }
+
+    function renderSlideshow() {
+        if (!slideshowStage || !slideshowDots) return;
+        const slides = getFeaturedSlides();
+
+        if (!slides.length) {
+            slideshowStage.innerHTML = `
+                <div style="height:100%; display:flex; align-items:center; justify-content:center; color:#94a3b8;">
+                    No featured products available yet.
+                </div>
+            `;
+            slideshowDots.innerHTML = "";
+            return;
+        }
+
+        if (slideIndex >= slides.length) slideIndex = 0;
+        if (slideIndex < 0) slideIndex = slides.length - 1;
+
+        const { id, item } = slides[slideIndex];
+        const stockCount = Number(item.stock ?? 0);
+        const outOfStock = stockCount <= 0;
+
+        slideshowStage.innerHTML = `
+            <div style="position:relative; width:100%; height:100%; overflow:hidden; background:#0d1118;">
+                ${
+                    item.image
+                        ? `<img src="${item.image}" alt="${item.name || "Jewelry piece"}" style="position:absolute; inset:0; width:100%; height:100%; object-fit:fill; display:block;">`
+                        : `<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:#94a3b8;">No Image Available</div>`
+                }
+
+                <div style="position:absolute; inset:0; background:linear-gradient(90deg, rgba(10,13,20,0.88) 0%, rgba(10,13,20,0.48) 52%, rgba(10,13,20,0.12) 100%); pointer-events:none;"></div>
+
+                <div style="position:absolute; left:32px; bottom:32px; z-index:2; max-width:480px; padding-right:20px;">
+                    <div style="font-size:0.75rem; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:#e5be49; margin-bottom:6px;">
+                        ${item.category || "Rabet Jewels Spotlight"} &bull; KES ${Number(item.price || 0).toLocaleString()}
+                    </div>
+                    <h3 style="margin:0 0 8px; font-size:clamp(1.75rem, 3vw, 2.6rem); font-weight:800; line-height:1.05; text-transform:uppercase; letter-spacing:0.02em; color:#ffffff;">
+                        ${item.name || "Untitled Item"}
+                    </h3>
+                    <p style="margin:0 0 18px; font-size:0.9rem; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; color:#e2e8f0;">
+                        ${item.description || "More than jewelry — wear the moment."}
+                    </p>
+                    <button
+                        type="button"
+                        id="slide-add-cart-btn"
+                        class="checkout-submit-btn"
+                        data-id="${id}"
+                        style="padding:10px 18px; font-size:0.88rem;"
+                        ${outOfStock ? "disabled" : ""}
+                    >
+                        ${outOfStock ? "Out of Stock" : "Add Featured Piece to Cart"}
+                    </button>
+                </div>
+            </div>
+        `;
+
+        slideshowDots.innerHTML = slides
+            .map(
+                (_, idx) => `
+                    <button
+                        type="button"
+                        data-slide="${idx}"
+                        aria-label="Go to slide ${idx + 1}"
+                        style="width:10px; height:10px; border-radius:50%; border:none; cursor:pointer; background:${idx === slideIndex ? "#e5be49" : "rgba(255,255,255,0.4)"};"
+                    ></button>
+                `
+            )
+            .join("");
+
+        document.getElementById("slide-add-cart-btn")?.addEventListener("click", () => {
+            addItemToCart(id);
+        });
+
+        slideshowDots.querySelectorAll("button[data-slide]").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                slideIndex = Number(btn.dataset.slide);
+                renderSlideshow();
+                startSlideshowAutoplay();
+            });
+        });
+    }
+
+    function startSlideshowAutoplay() {
+        stopSlideshowAutoplay();
+        slideTimer = setInterval(() => {
+            slideIndex += 1;
+            renderSlideshow();
+        }, 4500);
+    }
+
+    function stopSlideshowAutoplay() {
+        if (slideTimer) {
+            clearInterval(slideTimer);
+            slideTimer = null;
+        }
+    }
+
+    document.getElementById("slide-prev-btn")?.addEventListener("click", () => {
+        slideIndex -= 1;
+        renderSlideshow();
+        startSlideshowAutoplay();
+    });
+
+    document.getElementById("slide-next-btn")?.addEventListener("click", () => {
+        slideIndex += 1;
+        renderSlideshow();
+        startSlideshowAutoplay();
+    });
+
+    // 12. Initialize
+    updateCart();
+    loadProducts();
+</script>

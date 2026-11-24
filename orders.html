@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Orders & Activity | Rabet Jewelry</title>
+        <link rel="stylesheet" href="css/style.css">
+    </head>
+    <body>
+        <aside class="sidebar">
+            <div class="brand">Rabet Jewelry</div>
+            <nav class="nav-links">
+                <a href="index.html">Product Catalog</a>
+                <a href="'orders.html" class="active">Orders & Activity</a>
+                <a href="track.html">Order Tracking</a>
+                <a href="profile.html">Customer Profile</a>
+                <a href="about.html">About Store</a>
+                <a href="admin.html" class="admin-link">Admin Dashboard</a>
+            </nav>
+            <div class="user-badge" id="sidebar-user">Loading account...</div>
+        </aside>
+
+        <main class="main-content">
+            <button type="button" id="sidebar-toggle" class="menu-toggle">≡ Menu</button>
+            <h1>My Orders</h1>
+            <p class="subtitle">Review your personal purchase history and current delivery status.</p>
+            <div class="card" id="my-orders-list">Loading your orders...</div>
+
+            <h2 style="margin-top:34px;">Recent Store Activity Log</h2>
+            <p class="subtitle">Real-time database log of actions recorded across Rabet Jewelry.</p>
+            <div class="card" id="activity-feed">Loading activity logs...</div>
+        </main>
+
+        <script type="module">
+            import { auth, db } from "./js/firebase-config.js";
+            import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+            import {
+                collection,
+                query,
+                where,
+                orderBy,
+                limit,
+                getDocs
+            } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+            onAuthStateChanged(auth, async (user) => {
+                const ordersBox = document.getElementById("my-orders-list");
+                if (!ordersBox) return;
+
+            if (!user) {
+               ordersBox.innerHTML = `<p>Please <a href="profile.html" style="color:#d4af37;">sign in</a> to view your personal orders.</p>`;
+               return;
+            }
+
+            try {
+                const q = query(collection(db, "orders"), where("userId", "==", user.uid));
+                const snapshot = await getDocs(q);
+
+                if (snapshot.empty) {
+                   ordersBox.innerHTML = `<p>No orders placed yet. Visit <a href="index.html" style="color:#d4af37;">Products Catalog</a> to place one.</p>`;
+                   return;
+                }
+
+                ordersBox.innerHTML = "";
+                snapshot.forEach((docSnap) => {
+                    const o = docSnap.data();
+
+                    const itemTitle = Array.isArray(o.items) && o.items.length
+                        ? o.items.map((item) => `${item.name || "Item"} x${Number(item.qty || 1)}`).join(", ")
+                        : (o.productName || "Jewelry Order");
+
+                    const itemCode = o.productCode || (Array.isArray(o.items) && o.items[0]?.code) || "";
+                    const rawTotal = o.totalAmount ?? o.price ?? 0;
+                    const safeTotal = Number.isFinite(Number(rawTotal)) ? Number(rawTotal) : 0;
+
+                    ordersBox.innerHTML += `
+                        <div style="padding:14px 0; border-bottom:1px solid #262b38; display:flex; justify-content:space-between; align-items:center;">
+                             <div>
+                                 <strong>${itemTitle}</strong> <span style="color:#94a3b8;">${itemCode}</span><br>
+                                 <span style="color:#94a3b8; font-size:0.9rem;">Tracking ID: <strong style="color:#d4af37;">${o.trackingCode || ""}</strong></span>
+                            </div>
+                            <div style="text-align:right;">
+                               <span class="badge">${o.status || "Pending"}</span><br>
+                               <strong style="display:inline-block; margin-top:4px;">KES ${safeTotal.toLocaleString()}</strong>
+                            </div>
+                        </div>
+                    `;
+                });
+            } catch (err) {
+                console.error("Failed to load personal orders:", err);
+                ordersBox.innerHTML = `<p style="color:#ef4444;">Unable to load orders right now.</p>`;
+            }
+        });
+
+        async function loadActivityLogs() {
+            const feed = document.getElementById("activity-feed");
+            if (!feed) return;
+
+            try {
+                const q = query(collection(db, "activity_logs"), orderBy("timestamp", "desc"), limit(20));
+                const snap = await getDocs(q);
+
+                if (snap.empty) {
+                   feed.innerHTML = `<p>No store activities recorded yet.</p>`;
+                   return;
+                }
+
+                feed.innerHTML = "";
+                snap.forEach((docSnap) => {
+                    const log = docSnap.data();
+                    const timeStr = log.timestamp && typeof log.timestamp.toDate === "function"
+                        ? log.timestamp.toDate().toLocaleString()
+                        : "Just now";
+
+                    feed.innerHTML += `
+                        <p style="padding:10px 0; border-bottom:1px solid #262b38; font-size:0.9rem;">
+                            <span class="badge">${log.actionType || "ACTIVITY"}</span>
+                            <strong style="margin-left:6px;">${log.userEmail || "Store"}</strong> - ${log.description || ""}
+                            <span style="float:right; color:#64748b; font-size:0.8rem;">${timeStr}</span>
+                        </p>
+                    `;
+                });
+            } catch (err) {
+                console.error("Failed to load activity logs:", err);
+            }
+        }
+
+        loadActivityLogs();
+
+        const sidebarToggle = document.getElementById("sidebar-toggle");
+        const sidebarEl = document.querySelector(".sidebar");
+        const mainEl = document.querySelector(".main-content");
+
+        if (sidebarToggle && sidebarEl && mainEl) {
+            sidebarToggle.addEventListener("click", () => {
+                sidebarEl.classList.toggle("closed");
+                mainEl.classList.toggle("expanded");
+            });
+        }
+    </script>

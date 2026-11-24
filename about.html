@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Store | Rabet Jewlry</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="brand">RABET JEWELRY</div>
+        <nav class="nav-links">
+            <a href="index.html">Products Catalog</a>
+            <a href="orders.html">Orders & Activity</a>
+            <a href="track.html">Order Tracking</a>
+            <a href="profile.html">Customer Profile</a>
+            <a href="about.html" class="active">About Store</a>
+            <a href="admin.html" class="admin-link">Admin Dashboard</a>
+        </nav>
+        <div class="user-badge" id="sidebar-user">Loading account...</div>
+    </aside>
+
+    <main class="main-content">
+        <button type="button" id="sidebar-toggle" class="menu-toggle">≡ Menu</button>
+        <h1>About Rabet Jewerly</h1>
+        <p class="subtitle">We bring to your reach durable and affordable stylish jewelry and accessories</p>
+
+        <div class="card">
+            <h2>Our Story & Craftsmanship</h2>
+            <p style="line-height:1.7; color:#cbd5e1;">
+                Rabet Jewelry was founded with a simple goal: delivering luxury-grade 18K gold-plated chains, sterling silver cuffs, and bespoke rings without traditional retail markups. Every piece undergoes quality inspection before dispatch and includes a live tracking code so you can monitor your delivery from our studio straight to your doorstep.
+            </p>
+        </div>
+
+        <div class="grid-2">
+            <div class="card">
+                <h2>Studio Hours & Dispatch</h2>
+                <p style="color:#94a3b8; line-height:1.6;">
+                    Monday – Saturday: 8:30 AM – 6:30 PM
+                </p>
+            </div>
+            <div class="card">
+                <h2>Quality Guarantee</h2>
+                <p style="color:#94a3b8; line-height:1.6;">
+                    Create a customer profile to unlock order tracking and priority support.
+                </p>
+            </div>
+        </div>
+
+        <section class="card" style="margin-top: 24px; padding: 28px; border: 1px solid rgba(229, 190, 73, 0.28); background: linear-gradient(145deg, #111622 0%, #0d1118 100%)">
+            <div style="font-size: 0.75rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #e5be49; margin-bottom:6px;">
+                Customer Concierge &amp; Inquiries
+            </div>
+            <h2 style="margin: 0 0 10px; font-size: 1.5rem; color: #ffffff;">
+                Have a question about a piece
+            </h2>
+            <p style="margin: 0 0 22px; color: #94a3b8; font-size: 0.95rem; line-height: 1.6; max-width: 620px;">
+                Need help choosing a gift, confirm availability or arrange delivery? Reach out directly through your preferred channel.
+            </p>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px;">
+                <a
+                   href="https://wa.me/254119871223?text=Hello%20Rabet%20Jewelry%2C%20I%20have%20an%20inquiry%20about%20one%20of%20your%20piece."
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   style="display: flex; align-items: center; justify-content:center; gap:10px; padding: 14px 18px; border-radius:10px; background: #25d366; color: #0c0e13; font-weight: 700; font-size: 0.95rem; text-decoration: none;"
+                >
+                   <span>WhatsApp Us</span>
+                </a>
+
+                <a
+                   href="tel:+254119871223"
+                   style="display: flex; align-items: center; justify-content: center; gap: 10px; padding: 14px 18px; border-radius: 10px; background: #e5be49; color: #0c0e13; font-weight: 700; font-size: 0.95rem; text-decoration: none;"
+                >
+                   <span>Call Us (+254 119 871 223)</span>
+                </a>
+
+                <a
+                   href="mailto:basilosieko@gmail.com?subject=Jewelry%20Inquiry%20-%20Rabet%20Jewery"
+                   style="display: flex; align-items: center; justify-content: center; gap: 10px; padding: 14px 18px; border-radius: 10px; background: #1a2130; color: #f8fafc; border: 1px solid rgba(229, 190, 73, 0.45); font-weight: 700; font-size: 0.95rem; text-decoration: none;"
+                >
+                   <span>Email Us</span>
+                </a>
+            </div>
+        </section>
+    </main>
+
+    <script type="module" src="./js/firebase-config.js"></script>
+
+
+    <script>
+        const sidebarToggle = document.getElementById("sidebar-toggle");
+        const sidebarEl = document.querySelector(".sidebar");
+        const mainEl = document.querySelector(".main-content");
+
+        if (sidebarToggle && sidebarEl && mainEl) {
+            sidebarToggle.addEventListener("click", () => {
+                sidebarEl.classList.toggle("closed");
+                mainEl.classList.toggle("expanded");
+            });
+        }
+    </script>
+</body>
+</html>

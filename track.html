@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Order Tracking | Rabet Jewelry</title>
+        <link rel="stylesheet" href="css/style.css">
+    </head>
+    <body>
+        <aside class="sidebar">
+            <div class="brand">Rabet Jewelry</div>
+            <nav class="nav-links">
+                <a href="index.html">Products Catalog</a>
+                <a href="orders.html">Orders & Activity</a>
+                <a href="track.html" class="active">Order Tracking</a>
+                <a href="profile.html">Customer Profile</a>
+                <a href="admin.html" class="admin-link">Admin Dashboard</a>
+            </nav>
+            <div class="user-badge" id="sidebar-user">Loading account...</div>
+        </aside>
+
+        <main class="main-content">
+            <button type="button" id="sidebar-toggle" class="menu-toggle">≡ Menu</button>
+            <h1>Track Your Order</h1>
+            <p class="subtitle">Enter your tracking code (e.g. TRK-A9B2C1) to check real-time fulfillment progress.</p>
+
+            <div class="card">
+                <form id="track-form">
+                    <input type="text" id="tracking-input" placeholder="Enter Tracking Code..." reguired>
+                    <button type="submit" class="btn">Track Package</button>
+                </form>
+                <div id="track-result" style="margin-top:22px;"></div>
+            </div>
+        </main>
+
+        <script type="module">
+            import { auth, db, logStoreActivity } from "./js/firebase-config.js";
+            import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+            document.getElementById("track-form").addEventListener("submit", async (e) => {
+                e.preventDefault();
+                const code = document.getElementById("tracking-input").value.trim().toUpperCase();
+                const resultBox = document.getElementById("track-result");
+                resultBox.innerHTML = "Searching store records...";
+
+                const q = query(collection(db, "orders"), where("trackingCode", "==", code));
+                const snap = await getDocs(q);
+
+                await logStoreActivity("Track_LOOKUP", `Checked tracking status for ${code}`, auth.currentUser?.email || "Guest");
+
+                if (snap.empty) {
+                    resultBox.innerHTML = `<p style="#ef4444;">No order found matching tracking code <strong>${code}</strong>.</p>`;
+                } else {
+                    const order = snap.docs[0].data();
+                    const steps = ["Order Confirmed", "Processing", "Shipped", "Delivered"];
+                    const currentIdx = steps.indexOf(order.status);
+
+                    const timelineHtml = steps.map((step, index) => {
+                        const active = index <= currentIdx;
+                        return `<span style="padding:6px 12px; border-radius:6px; font-size:0.85rem; margin-right:8px; display:inline-block; margin-bottom:6px; background:${active ? '#d4af37' : '#0c0e13'}; color:${active ? '#0c0e13' : '#64748b'}; font-weight:700;">${index + 1}. ${step}</span>`;
+                    }).join("");
+
+                    resultBox.innerHTML = `
+                        <div style="border-top:1px solid #262b38; padding-top:18px;">
+                            <div style="margin-bottom:14px;">${timelineHtml}</div>
+                            <h3>${order.productName} (${order.productCode})</h3>
+                            <p style="margin-top:8px;"<strong>Tracking Code:</strong>${order.trackingCode}</p>
+                            <p><strong>Customer Email:</strong> ${order.userEmail}</p>
+                            <p><strong>Order Value:</strong> KES ${Number(order.price).toLocaleString()}</p>
+                            <p><strong>Current Status:</strong> <span class="badge">${order.status}</span></p>
+                        </div>
+                    `;
+                }
+            });
+
+            const sidebarToggle = document.getElementById("sidebar-toggle");
+            const sidebarEl = document.querySelector(".sidebar");
+            const mainEl = document.querySelector(".main-content");
+
+            if (sidebarToggle && sidebarEl && mainEl) {
+                sidebarToggle.addEventListener("click", () => {
+                    sidebarEl.classList.toggle("closed");
+                    mainEl.classList.toggle("expanded");
+                });
+            }
+        </script>
+    </body>
+</html>

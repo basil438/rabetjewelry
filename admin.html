@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | Rabet Jewelry</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="brand">RABET JEWELRY</div>
+        <nav class="nav-links">
+            <a href="index.html">Products Catalog</a>
+            <a href="orders.html">Orders & Activity</a>
+            <a href="track.html">Order Tracking</a>
+            <a href="profile.html">Customer Profile</a>
+            <a href="about.html">About Store</a>
+            <a href="admin.html" class="admin-link active">Admin Dashboard</a>
+        </nav>
+        <div class="user-badge" id="sidebar-user">Loading account...</div>
+    </aside>
+
+    <main class="main-content">
+        <button type="button" id="sidebar-toggle" class="menu-toggle">≡ Menu</button>
+        <h1>Store Admin Dashboard</h1>
+        <p class="subtitle">Manage inventory, add new jewelry pieces, and update customer order statuses.</p>
+
+        <!-- Access Denied Notice -->
+        <div id="access-denied" class="card" style="border-color:#ef4444; display:none;">
+            <h2 style="color:#ef4444;">Admin Access Restricted</h2>
+            <p>You must sign in with the authorized store administrator email on the <a href="profile.html" style="color:#d4af37;">Customer Profile</a> page to access this panel.</p>
+        </div>
+
+        <!-- Authorized Admin Controls -->
+        <div id="admin-panel" style="display:none;">
+            <div id="admin-alert"></div>
+
+            <!-- Add New Product & Inventory Summary -->
+            <div class="grid-2">
+                <div class="card">
+                    <h2>Add New Jewelry Item</h2>
+                    <form id="add-product-form">
+                        <input type="text" id="prod-code" placeholder="Product Code (e.g. JWL-105)" required>
+                        <input type="text" id="prod-name" placeholder="Jewelry Name" required>
+                        <select id="prod-category" required>
+                            <option value="Necklaces">Necklaces</option>
+                            <option value="Watches">Watches</option>
+                            <option value="Handbags">Handbags</option>
+                            <option value="Totebags">Totebags</option>
+                            <option value="Chestbags">Chestbags</option>
+                            <option value="Fannypacks">Fannypacks</option>
+                            <option value="Sidebags">Sidebags</option>
+                        </select>
+                        <input type="number" id="prod-price" placeholder="Price in KES (e.g. 4200)" required>
+                        <input type="number" id="prod-stock" placeholder="Initial Stock Quantity" value="10" required>
+                        <input type="text" id="prod-image" placeholder="Image path (e.g. image/ring.jpg) or URL" required>
+                        <button type="submit" class="btn">Add Product to Store</button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <h2>Current Store Inventory</h2>
+                    <div id="admin-inventory-list">Loading inventory...</div>
+                </div>
+            </div>
+
+            <!-- Customer Orders Management -->
+            <div class="card">
+                <h2>All Customer Orders (Update Status)</h2>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Tracking Code</th>
+                                <th>Customer</th>
+                                <th>Item</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Update</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-orders-tbody">
+                            <tr><td colspan="6">Loading orders...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { auth, db, ADMIN_EMAIL, logStoreActivity } from "./js/firebase-config.js";
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import {
+            collection,
+            addDoc,
+            getDocs,
+            doc,
+            updateDoc,
+            deleteDoc,
+            orderBy,
+            query
+        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        const accessDenied = document.getElementById("access-denied");
+        const adminPanel = document.getElementById("admin-panel");
+        const adminAlert = document.getElementById("admin-alert");
+
+        onAuthStateChanged(auth, (user) => {
+            if (user && user.email === ADMIN_EMAIL) {
+                accessDenied.style.display = "none";
+                adminPanel.style.display = "block";
+                loadAdminInventory();
+                loadAllOrders();
+            } else {
+                adminPanel.style.display = "none";
+                accessDenied.style.display = "block";
+            }
+        });
+
+        // Add Product
+        document.getElementById("add-product-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const code = document.getElementById("prod-code").value.trim().toUpperCase();
+            const name = document.getElementById("prod-name").value.trim();
+            const category = document.getElementById("prod-category").value;
+            const price = Number(document.getElementById("prod-price").value);
+            const stock = Number(document.getElementById("prod-stock").value);
+            const image = document.getElementById("prod-image").value.trim();
+
+            await addDoc(collection(db, "products"), {
+                code, name, category, price, stock, image
+            });
+
+            await logStoreActivity("ADMIN_ADD_PRODUCT", `Added new item: ${name} (${code})`, ADMIN_EMAIL);
+            adminAlert.innerHTML = `<div class="card" style="border-color:#10b981;">Added <strong>${name}</strong> to the store catalog.</div>`;
+            e.target.reset();
+            loadAdminInventory();
+        });
+
+        // Load & Delete Inventory
+        async function loadAdminInventory() {
+            const list = document.getElementById("admin-inventory-list");
+            const snap = await getDocs(collection(db, "products"));
+            list.innerHTML = "";
+
+            snap.forEach(docSnap => {
+                const p = docSnap.data();
+                const row = document.createElement("div");
+                row.style.cssText = "display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid #262b38;";
+                row.innerHTML = `
+                    <div>
+                        <strong>${p.name}</strong> (${p.code})<br>
+                        <span style="font-size:0.85rem; color:#94a3b8;">KES ${Number(p.price).toLocaleString()} • Stock: ${p.stock}</span>
+                    </div>
+                    <button class="btn btn-danger">Delete</button>
+                `;
+                row.querySelector("button").addEventListener("click", async () => {
+                    await deleteDoc(doc(db, "products", docSnap.id));
+                    await logStoreActivity("ADMIN_DELETE_PRODUCT", `Removed item: ${p.name} (${p.code})`, ADMIN_EMAIL);
+                    loadAdminInventory();
+                });
+                list.appendChild(row);
+            });
+        }
+
+        // Load All Customer Orders & Update Status
+        async function loadAllOrders() {
+            const tbody = document.getElementById("admin-orders-tbody");
+            const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
+            const snap = await getDocs(q);
+
+            if (snap.empty) {
+                tbody.innerHTML = `<tr><td colspan="6">No customer orders yet.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = "";
+            snap.forEach(docSnap => {
+                const o = docSnap.data();
+                const statuses = ["Order Confirmed", "Processing", "Shipped", "Delivered"];
+                const options = statuses.map(s => `<option value="${s}" ${o.status === s ? 'selected' : ''}>${s}</option>`).join("");
+
+            const customerLabel =
+                o.customerName ||
+                o.userEmail ||
+                o.customerPhone ||
+                "Unknown Customer";
+
+            const itemLabel =
+                Array.isArray(o.items) && o.items.length
+                    ? o.items
+                          .map((entry) => `${entry.name || "Item"} (x${Number(entry.qty || 1)})`)
+                          .join(", ")
+                    : o.productName || "Item";
+
+            const computedItemsTotal = Array.isArray(o.items)
+                ? o.items.reduce(
+                      (sum, entry) => sum + Number(entry.price || 0) * Number(entry.qty || 1),
+                      0
+                  )
+                : 0;
+
+            const rawAmount =
+                o.totalAmount ??
+                o.price ??
+                (Array.isArray(o.items) ? computedItemsTotal : 0);
+
+            const numericAmount = Number(rawAmount);
+            const safeAmount = Number.isFinite(numericAmount) ? numericAmount : 0;
+
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td><strong style="color:#d4af37;">${o.trackingCode || docSnap.id.slice(0, 6).toUpperCase()}</strong></td>
+                <td>${customerLabel}</td>
+                <td>${itemLabel}</td>
+                <td>KES ${safeAmount.toLocaleString()}</td>
+                <td><span class="badge">${o.status || "Pending"}</span></td>
+                <td style="display:flex; gap:8px; align-items:center;">
+                    <select style="margin:0; padding:6px; width:auto;">${options}</select>
+                    <button class="btn" style="padding:6px 12px; width:auto;">Save</button>
+                </td>
+            `;
+
+                tr.querySelector("button").addEventListener("click", async () => {
+                    const newStatus = tr.querySelector("select").value;
+                    await updateDoc(doc(db, "orders", docSnap.id), { status: newStatus });
+                    await logStoreActivity("ADMIN_ORDER_UPDATE", `Updated ${o.trackingCode} to "${newStatus}"`, ADMIN_EMAIL);
+                    adminAlert.innerHTML = `<div class="card" style="border-color:#10b981;">Order <strong>${o.trackingCode}</strong> updated to <strong>${newStatus}</strong>.</div>`;
+                    loadAllOrders();
+                });
+
+                tbody.appendChild(tr);
+            });
+        }
+
+        const sidebarToggle = document.getElementById("sidebar-toggle");
+        const sidebarEl = document.querySelector(".sidebar");
+        const mainEl = document.querySelector(".main-content");
+
+        if (sidebarToggle && sidebarEl && mainEl) {
+            sidebarToggle.addEventListener("click", () => {
+                sidebarEl.classList.toggle("closed");
+                mainEl.classList.toggle("expanded");
+            });
+        }
+    </script>
+</body>
+</html>
