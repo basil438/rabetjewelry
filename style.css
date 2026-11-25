@@ -38,6 +38,7 @@ body {
     overflow-y: auto;
     transition: transform 0.25s ease;
     margin-left: 0.25 ease;
+    z-index: 1000;
 }
 
 .brand {
@@ -240,6 +241,7 @@ th {
     height: auto;
     align-self: flex-start;
     width: fit-content;
+    z-index: 1001;
 }
 
 .menu-toggle:hover {
