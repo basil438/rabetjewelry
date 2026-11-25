@@ -247,6 +247,7 @@ th {
 }
 
 .sidebar.closed {
+    display: none;
     transform: translateX(-100%);
 } 
 
