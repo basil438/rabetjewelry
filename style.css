@@ -256,8 +256,8 @@ th {
 
 .sidebar.closed + .storefront-page,
 .storefront-page.expanded {
-    margin-left: 0;
-    width: 100%;
+    margin-left: 260px;
+    width: calc(100%- 260px);
 }
 
 .storefront-page {
@@ -270,7 +270,6 @@ th {
     background: #0c0d10;
     color: #f1f5f9;
     box-sizing: border-box;
-    margin-left: 260px;
     transition: margin-left 0.25s ease;
 }
 
