@@ -256,8 +256,8 @@ th {
 
 .sidebar.closed + .storefront-page,
 .storefront-page.expanded {
-    margin-left: 260px;
-    width: calc(100%- 260px);
+    margin-left: 0;
+    width: 100%;
 }
 
 .storefront-page {
