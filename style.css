@@ -442,15 +442,27 @@ th {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-    .sidebar:not(.closed) + .storefront-page {
-        margin-left: 0;
-        width: 100%;
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        z-index: 1000;
+    }
+
+    .sidebar.closed {
+        display: none;
     }
 }
 
-@media (max-width: 480px) {
-    .catalog-grid{
-        grid-template-columns: 1fr;
+.sidebar:not(.closed) + .storefront-page,
+.sidebar:not(.closed) + .main-content,
+.main-content,
+.main-content.expanded {
+    margin-left: 0;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
     }
 }
 
