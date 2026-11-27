@@ -476,7 +476,7 @@ th {
     gap: 6px;
     min-width: 0;
     overflow: hidden;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35)
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
 }
 
 .catalog-card-img {
