@@ -665,3 +665,37 @@ body.light-theme .checkout-submit-btn {
 body.light-theme .checkout-submit-btn:hover {
     background: #1b4b91;
 }
+
+body.light-theme p,
+body.light-theme .hero-subtitle,
+body.light-theme .stoe-subtitle {
+    color: #334e75;
+    opacity: 1;
+}
+
+body. light-theme .filter-btn,
+body. light-theme .category-pill,
+body. light-theme .collection-btn {
+    background: #ffffff;
+    color: #0f2d5c;
+    border: 1px solid rgba(15, 45, 92, 0.22);
+}
+
+body.light-theme .filter-btn.active,
+body.light-theme .filter-btn:hover,
+body.light-theme .category-pill.active,
+body.light-theme .category-pill:hover {
+    background: #0f2d5c;
+    color: #ffffff;
+    border-color: #0f2d5c;
+}
+
+body.light-theme .store-topbar button:not(.theme-toggle-btn) {
+    background: #0f2d5c;
+    color: #ffffff;
+    border: 1px solid #0f2d5c;
+}
+
+body.light-theme .store-topbar button:not(.theme-toggle-btn):hover {
+    background: #1b4b91;
+}
