@@ -478,8 +478,12 @@ th {
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
 }
 
-.catalog-card-hover {
-    background: var(--gold-hover);
+.catalog-card:hover {
+    background: #1e1e28;
+    color: #ffffff;
+    border-color: rgba(212, 175, 55, 0.6);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .catalog-card-img {
