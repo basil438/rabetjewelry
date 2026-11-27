@@ -161,6 +161,24 @@
                 mainEl.classList.toggle("expanded");
             });
         }
+
+        (function () {
+          const toggleBtn = document.getElementById("theme-toggle");
+          const savedTheme = localStorage.getItem("rabet_theme");
+
+          if (savedTheme === "light" ) {
+            document.body.classList.add("light-theme");
+            if (toggleBtn) toggleBtn.textContent = "🌙 Dark Gold Theme";
+          }
+
+          if (toggleBtn) {
+            toggleBtn.addEventListener("click", () => {
+                const isLight = document.body.classList.toggle("light-theme");
+                localStorage.setItem("rabet_theme", isLight ? "Light" : "dark");
+                toggleBtn.textContent = isLight ? "🌙 Dark Gold Theme" : "☀️Light Theme";
+            });
+          }
+        })();
     </script>
 </body>
 </html>
