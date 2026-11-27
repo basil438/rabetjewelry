@@ -582,3 +582,86 @@ th {
     object-fit: cover;
     display: block;
 }
+
+.theme-toggle-btn {
+    background: rgba(229, 190, 73, 0.14);
+    color: #e5be49;
+    border: 1px solid rgba(229, 190, 73, 0.45);
+    border-radius: 999px;
+    padding: 7px 14px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.theme-toggle-btn:hover {
+    background: #e5be49;
+    color: #0c0d10;
+}
+
+body.light-theme,
+body.light-theme .storefront-page {
+    background: #f6f9fc;
+    color: #0f2342;
+}
+
+body.light-theme .store-topbar,
+body.light-theme .sidebar {
+    background: #ffffff;
+    color: #0f2342;
+    border-color: rgba(15, 45, 92, 0.12);
+    box-shadow: 0 4px 18px rgba(15, 45, 92, 0.06);
+}
+
+body.light-theme .theme-toggle-btn {
+    background: #0f2d5c;
+    color: #ffffff;
+    border-color: #0f2d5c;
+}
+
+body.light-theme .theme-toggle-btn:hover {
+    background: #1b4b91;
+    border-color: #1b4b91;
+    color: #ffffff;
+}
+
+body.light-theme .menu-toggle {
+    background: #ffffff;
+    color: #0f2d5c;
+    border: 1px solid rgba(15, 45, 92, 0.25);
+}
+
+body.light-theme .catalog-card {
+    background: #ffffff;
+    border: 1px solid rgba(15, 45, 92, 0.16);
+    box-shadow: 0 8px 22px rgba(15, 45, 92, 0.08);
+    color: #0f2342;
+}
+
+body.light-theme .catalog-cat {
+    color: #3b6cb7;
+}
+
+body.light-theme .catalog-name {
+    color: #0f2342;
+}
+
+body.light-theme .catalog-price {
+    color: #15438a;
+    font-weight: 700;
+}
+
+body.light-theme .catalog-desc {
+    color: #4a5d79;
+}
+
+body.light-theme .checkout-submit-btn {
+    background: #0f2d5c;
+    color: #ffffff;
+    border: 1px solid #0f2d5c;
+}
+
+body.light-theme .checkout-submit-btn:hover {
+    background: #1b4b91;
+}
