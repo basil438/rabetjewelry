@@ -567,3 +567,11 @@ th {
     font-weight: 700;
     cursor: pointer;
 }
+
+.store-logo-img {
+    height: 95px;
+    width: 95px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+}
